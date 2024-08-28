@@ -1,0 +1,185 @@
+Here's a revised outline for the presentation with 10 slides:
+
+---
+
+### Slide 1: *Title Slide*
+- *Title*: Password Expiry Notification System
+- *Subtitle*: Detailed Implementation and Workflow
+- *Author*: [Your Name]
+- *Date*: [Date]
+
+---
+
+### Slide 2: *Objective*
+- *Title*: Objective and Scope
+- *Content*:
+  - *Objective*: Notify users about passwords expiring in 15 days.
+  - *Scope*:
+    - PowerShell Script: Extract data from Active Directory.
+    - iWorkflow: Process data and send notifications.
+
+---
+
+### Slide 3: *PowerShell Script Overview*
+- *Title*: PowerShell Script Overview
+- *Content*:
+  - *Purpose*: Collect user data and password expiry information.
+  - *Key Components*:
+    - Connect to Active Directory.
+    - Filter users by password expiry.
+    - Export results to CSV.
+
+---
+
+### Slide 4: *PowerShell Script Detailed Code*
+- *Title*: Detailed PowerShell Script
+- *Code*:
+  powershell
+  # Connect to Active Directory
+  Import-Module ActiveDirectory
+
+  $expiryThreshold = (Get-Date).AddDays(15)
+  $users = Get-ADUser -Filter * -Properties "PasswordLastSet", "PasswordNeverExpires" |
+            Where-Object { $_.PasswordLastSet -lt $expiryThreshold -and -not $_.PasswordNeverExpires }
+
+  $results = @()
+  foreach ($user in $users) {
+      $results += [PSCustomObject]@{
+          UserName = $user.SamAccountName
+          ExpiryDate = $expiryThreshold
+      }
+  }
+
+  $results | Export-Csv -Path "C:\Path\To\PasswordExpiryReport.csv" -NoTypeInformation
+  
+
+---
+
+### Slide 5: *PowerShell Script Flowchart*
+- *Title*: PowerShell Script Flowchart
+- *Diagram*:
+  - *Start* → *Initialize Variables* → *Connect to AD* → *Fetch Users* → *Filter by Expiry* → *Generate Report* → *Export CSV* → *End*
+
+---
+
+### Slide 6: *iWorkflow Overview*
+- *Title*: iWorkflow Overview
+- *Content*:
+  - *Purpose*: Automate processing and notification.
+  - *Steps*:
+    - Retrieve Report
+    - Process Report Data
+    - Manage File on Ignio
+    - Send Email Notifications
+    - Handle Special Cases
+
+---
+
+### Slide 7: *iWorkflow Steps 1-3*
+- *Title*: iWorkflow Steps 1-3
+- *Content*:
+  - *Step 1: Retrieve Report*:
+    - *Code*:
+      groovy
+      step("Retrieve Report", StepType.ONFUNCTION) {
+          def reportPath = "C:\\Path\\To\\PasswordExpiryReport.csv"
+          def reportData = new File(reportPath).text
+          processMap.reportData = reportData
+      }
+      
+    - *Explanation*: Reads the CSV file containing the password expiry information.
+
+  - *Step 2: Process Report Data*:
+    - *Code*:
+      groovy
+      step("Process Report Data", StepType.ONFUNCTION) {
+          def csvData = processMap.reportData
+          def csvParser = new CsvParser()
+          def parsedData = csvParser.parse(csvData)
+          processMap.parsedData = parsedData
+      }
+      
+    - *Explanation*: Parses CSV data into a structured format for further processing.
+
+  - *Step 3: Manage File on Ignio*:
+    - *Code*:
+      groovy
+      step("Manage File on Ignio", StepType.ONFUNCTION) {
+          // Handle file management logic here
+          processMap.fileManagementStatus = "Completed"
+      }
+      
+    - *Explanation*: Manages file operations on the Ignio platform.
+
+---
+
+### Slide 8: *iWorkflow Steps 4-5*
+- *Title*: iWorkflow Steps 4-5
+- *Content*:
+  - *Step 4: Send Mail Function*:
+    - *Code*:
+      groovy
+      step("Send Mail Function", StepType.ONFUNCTION) {
+          def emailDictionary = processMap.getReport_output.hashMap
+          def expiryDateDictionaries = processMap.getReport_output.hashMap1
+          def jsonSlurper = new groovy.json.JsonSlurper()
+          def emailCounts = jsonSlurper.parseText(emailDictionary)
+          def expiryDateCounts = jsonSlurper.parseText(expiryDateDictionaries)
+
+          emailCounts.each { age, emails ->
+              if (emails) {
+                  for (email in emails) {
+                      def expiryDate = expiryDateCounts.find { it.email == email }?.expiryDate ?: "No Expiry Date"
+                      subject.sendMail(emaildictionary: email, passwordage: age, expirydate: expiryDate, ioutput: "send_mail_function_output")
+                  }
+              }
+          }
+          processMap.StepThreeOutput = 0
+      }.to({ processMap.StepThreeOutput == 0 }, "SUCCESS")
+      .elseTo("ERROR")
+      
+    - *Explanation*: Sends email notifications based on password expiry data.
+
+  - *Step 5: Handle No Expiring Passwords*:
+    - *Code*:
+      groovy
+      step("noUsersPasswordExpiry15daysReport", StepType.ONIGNIO) {
+          def op = iAction.Collaboration.SendMail(
+              Body: processMap.emailBody2,
+              Subject: processMap.emailSubject,
+              To: processMap.emailTo,
+              CC: processMap.emailCC
+          )
+          processMap.StepfourOutput = 0
+      }.to({ processMap.StepfourOutput == 0 }, "SUCCESS")
+      .elseTo("ERROR")
+      
+    - *Explanation*: Sends an email when there are no users with expiring passwords.
+
+---
+
+### Slide 9: *Algorithm and Flowchart*
+- *Title*: Algorithm and Flowchart
+- *Diagram*:
+  - *Algorithm*:
+    1. *Start*.
+    2. *Fetch Data*.
+    3. *Parse Data*.
+    4. *Send Emails*.
+    5. *Handle No Users*.
+    6. *End*.
+  - *Flowchart*:
+    - *Start* → *Fetch Data* → *Parse Data* → *Send Emails* → *Handle No Users* → *End*
+
+---
+
+### Slide 10: *Error Handling and Debugging*
+- *Title*: Common Errors and Solutions
+- *Content*:
+  - *Missing Property Errors*: Ensure data is correctly parsed and accessed.
+  - *Syntax Issues*: Verify Groovy syntax and data structures.
+  - *Debugging Tips*: Use logs to trace issues and validate data formats.
+
+---
+
+I’ll prepare the PowerPoint with these 10 slides and share it with you. If you need any more adjustments or additional details, let me know!
